@@ -607,6 +607,10 @@ static int create_container_directories(const char* user, const char *app_id,
   for(local_dir_ptr = local_dir; *local_dir_ptr != NULL; ++local_dir_ptr) {
     char *container_dir = get_container_work_directory(*local_dir_ptr, user, app_id,
                                                 container_id);
+    fprintf(LOGFILE,
+            "ALINDEBUG: container work directory %s, perms %o", container_dir, perms);
+    fprintf(LOGFILE,
+            "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d", getuid(), getgid(), geteuid(), getegid());
     if (container_dir == NULL) {
       return -1;
     }
