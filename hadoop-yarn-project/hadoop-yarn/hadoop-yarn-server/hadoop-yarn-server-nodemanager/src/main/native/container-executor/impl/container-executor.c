@@ -509,7 +509,7 @@ int mkdirs(const char* path, mode_t perm) {
   char * npath;
   char * p;
   fprintf(LOGFILE,
-          "ALINDEBUG: mkdirs %s, perms %o\n", path, perms);
+          "ALINDEBUG: mkdirs %s, perms %o\n", path, perm);
   fprintf(LOGFILE,
           "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
 
@@ -560,7 +560,7 @@ int create_validate_dir(const char* npath, mode_t perm, const char* path,
   struct stat sb;
   if (stat(npath, &sb) != 0) {
     fprintf(LOGFILE,
-            "ALINDEBUG: create_validate_dir %s, perms %o\n", npath, perms);
+            "ALINDEBUG: create_validate_dir %s, perms %o\n", npath, perm);
     fprintf(LOGFILE,
             "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
     if (mkdir(npath, perm) != 0) {
