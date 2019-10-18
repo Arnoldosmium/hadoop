@@ -508,7 +508,14 @@ int mkdirs(const char* path, mode_t perm) {
   struct stat sb;
   char * npath;
   char * p;
+  fprintf(LOGFILE,
+          "ALINDEBUG: mkdirs %s, perms %o\n", path, perms);
+  fprintf(LOGFILE,
+          "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
+
   if (stat(path, &sb) == 0) {
+    fprintf(LOGFILE,
+            "ALINDEBUG: %s exists! uid %d, gid %d, perms %o\n", path, sb.st_uid, sb.st_gid, sb.st_mode);
     return check_dir(path, sb.st_mode, perm, 1);
   }
   npath = strdup(path);
@@ -552,6 +559,10 @@ int create_validate_dir(const char* npath, mode_t perm, const char* path,
                         int finalComponent) {
   struct stat sb;
   if (stat(npath, &sb) != 0) {
+    fprintf(LOGFILE,
+            "ALINDEBUG: create_validate_dir %s, perms %o\n", npath, perms);
+    fprintf(LOGFILE,
+            "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
     if (mkdir(npath, perm) != 0) {
       if (errno != EEXIST || stat(npath, &sb) != 0) {
         fprintf(LOGFILE, "Can't create directory %s - %s\n", npath,
@@ -608,9 +619,7 @@ static int create_container_directories(const char* user, const char *app_id,
     char *container_dir = get_container_work_directory(*local_dir_ptr, user, app_id,
                                                 container_id);
     fprintf(LOGFILE,
-            "ALINDEBUG: container work directory %s, perms %o", container_dir, perms);
-    fprintf(LOGFILE,
-            "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d", getuid(), getgid(), geteuid(), getegid());
+            "ALINDEBUG: container work directory %s, perms %o\n", container_dir, perms);
     if (container_dir == NULL) {
       return -1;
     }
