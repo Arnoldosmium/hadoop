@@ -857,6 +857,11 @@ int create_directory_for_user(const char* path) {
     ret = change_effective_user(root, nm_gid);
   }
 
+  fprintf(LOGFILE,
+          "ALINDEBUG: create_directory_for_user %s, perms %o\n", path, permissions);
+  fprintf(LOGFILE,
+          "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
+
   if (ret == 0) {
     if (0 == mkdir(path, permissions) || EEXIST == errno) {
       // need to reassert the group sticky bit
