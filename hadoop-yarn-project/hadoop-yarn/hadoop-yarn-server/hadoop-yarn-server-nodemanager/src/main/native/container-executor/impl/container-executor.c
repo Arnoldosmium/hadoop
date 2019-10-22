@@ -509,13 +509,13 @@ int mkdirs(const char* path, mode_t perm) {
   char * npath;
   char * p;
   fprintf(LOGFILE,
-          "ALINDEBUG: mkdirs %s, perms %o\n", path, perm);
+          "DDEBUG: mkdirs %s, perms %o\n", path, perm);
   fprintf(LOGFILE,
-          "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
+          "DDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
 
   if (stat(path, &sb) == 0) {
     fprintf(LOGFILE,
-            "ALINDEBUG: %s exists! uid %d, gid %d, perms %o\n", path, sb.st_uid, sb.st_gid, sb.st_mode);
+            "DDEBUG: %s exists! uid %d, gid %d, perms %o\n", path, sb.st_uid, sb.st_gid, sb.st_mode);
     return check_dir(path, sb.st_mode, perm, 1);
   }
   npath = strdup(path);
@@ -560,9 +560,9 @@ int create_validate_dir(const char* npath, mode_t perm, const char* path,
   struct stat sb;
   if (stat(npath, &sb) != 0) {
     fprintf(LOGFILE,
-            "ALINDEBUG: create_validate_dir %s, perms %o\n", npath, perm);
+            "DDEBUG: create_validate_dir %s, perms %o\n", npath, perm);
     fprintf(LOGFILE,
-            "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
+            "DDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
     if (mkdir(npath, perm) != 0) {
       if (errno != EEXIST || stat(npath, &sb) != 0) {
         fprintf(LOGFILE, "Can't create directory %s - %s\n", npath,
@@ -619,7 +619,7 @@ static int create_container_directories(const char* user, const char *app_id,
     char *container_dir = get_container_work_directory(*local_dir_ptr, user, app_id,
                                                 container_id);
     fprintf(LOGFILE,
-            "ALINDEBUG: container work directory %s, perms %o\n", container_dir, perms);
+            "DDEBUG: container work directory %s, perms %o\n", container_dir, perms);
     if (container_dir == NULL) {
       return -1;
     }
@@ -838,6 +838,74 @@ static int change_owner(const char* path, uid_t user, gid_t group) {
   }
 }
 
+void chown_dir_contents(const char *dir_path, uid_t uid, gid_t gid) {
+  DIR *dp;
+  struct dirent *ep;
+
+  char *path_tmp = malloc(strlen(dir_path) + NAME_MAX + 2);
+  if (path_tmp == NULL) {
+    return;
+  }
+
+  char *buf = stpncpy(path_tmp, dir_path, strlen(dir_path));
+  *buf++ = '/';
+
+  dp = opendir(dir_path);
+  if (dp != NULL) {
+    while ((ep = readdir(dp)) != NULL) {
+      stpncpy(buf, ep->d_name, strlen(ep->d_name));
+      buf[strlen(ep->d_name)] = '\0';
+      change_owner(path_tmp, uid, gid);
+    }
+    closedir(dp);
+  }
+
+  free(path_tmp);
+}
+
+static int change_owner_recursive(const char* path, uid_t user, gid_t group) {
+  int ret = change_owner(path, user, group);
+  if (ret != 0) {
+    return ret;
+  }
+  chown_dir_contents(path, user, group);
+  return 0;
+}
+
+static int chmod_recursive(const char *dir_path, mode_t mode) {
+  int ret = chmod(dir_path, mode);
+  if (ret != 0) {
+    return ret;
+  }
+
+  DIR *dp;
+  struct dirent *ep;
+
+  char *path_tmp = malloc(strlen(dir_path) + NAME_MAX + 2);
+  if (path_tmp == NULL) {
+    return;
+  }
+
+  char *buf = stpncpy(path_tmp, dir_path, strlen(dir_path));
+  *buf++ = '/';
+
+  dp = opendir(dir_path);
+  if (dp != NULL) {
+    while ((ep = readdir(dp)) != NULL) {
+      stpncpy(buf, ep->d_name, strlen(ep->d_name));
+      buf[strlen(ep->d_name)] = '\0';
+      ret = chmod(path_tmp, mode);
+      if (ret != 0){
+        return ret;
+      }
+    }
+    closedir(dp);
+  }
+
+  free(path_tmp);
+  return 0;
+}
+
 /**
  * Create a top level directory for the user.
  * It assumes that the parent directory is *not* writable by the user.
@@ -858,19 +926,19 @@ int create_directory_for_user(const char* path) {
   }
 
   fprintf(LOGFILE,
-          "ALINDEBUG: create_directory_for_user %s, perms %o\n", path, permissions);
+          "DDEBUG: create_directory_for_user %s, perms %o\n", path, permissions);
   fprintf(LOGFILE,
-          "ALINDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
+          "DDEBUG: UID %d, GID %d, EUID %d, EGID %d\n", getuid(), getgid(), geteuid(), getegid());
 
   if (ret == 0) {
     if (0 == mkdir(path, permissions) || EEXIST == errno) {
       // need to reassert the group sticky bit
-      if (change_owner(path, user, nm_gid) != 0) {
+      if (change_owner_recursive(path, user, nm_gid) != 0) {
         fprintf(LOGFILE, "Failed to chown %s to %d:%d: %s\n", path, user, nm_gid,
             strerror(errno));
         ret = -1;
-      } else if (chmod(path, permissions) != 0) {
-        fprintf(LOGFILE, "Can't chmod %s to add the sticky bit - %s\n",
+      } else if (chmod_recursive(path, permissions) != 0) {
+        fprintf(LOGFILE, "Can't recursively chmod %s to add the sticky bit - %s\n",
                 path, strerror(errno));
         ret = -1;
       }
@@ -1844,30 +1912,6 @@ int delete_as_user(const char *user,
   return ret;
 }
 
-void chown_dir_contents(const char *dir_path, uid_t uid, gid_t gid) {
-  DIR *dp;
-  struct dirent *ep;
-
-  char *path_tmp = malloc(strlen(dir_path) + NAME_MAX + 2);
-  if (path_tmp == NULL) {
-    return;
-  }
-
-  char *buf = stpncpy(path_tmp, dir_path, strlen(dir_path));
-  *buf++ = '/';
-
-  dp = opendir(dir_path);
-  if (dp != NULL) {
-    while ((ep = readdir(dp)) != NULL) {
-      stpncpy(buf, ep->d_name, strlen(ep->d_name));
-      buf[strlen(ep->d_name)] = '\0';
-      change_owner(path_tmp, uid, gid);
-    }
-    closedir(dp);
-  }
-
-  free(path_tmp);
-}
 
 /**
  * Mount a cgroup controller at the requested mount point and create
