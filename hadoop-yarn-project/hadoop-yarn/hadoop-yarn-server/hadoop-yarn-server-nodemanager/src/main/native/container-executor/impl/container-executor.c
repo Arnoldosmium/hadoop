@@ -873,6 +873,7 @@ static int change_owner_recursive(const char* path, uid_t user, gid_t group) {
 }
 
 static int chmod_recursive(const char *dir_path, mode_t mode) {
+  int ret;
   DIR *dp;
   struct dirent *ep;
 
