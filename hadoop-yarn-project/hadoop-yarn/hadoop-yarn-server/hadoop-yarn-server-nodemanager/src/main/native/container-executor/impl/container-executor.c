@@ -805,6 +805,8 @@ int set_user(const char *user) {
  * Change the ownership of the given file or directory to the new user.
  */
 static int change_owner(const char* path, uid_t user, gid_t group) {
+  fprintf(LOGFILE,
+          "DDEBUG: chown %s, user %d, group %d\n", path, user, group);
   if (geteuid() == user && getegid() == group) {
 
   /*
@@ -890,6 +892,8 @@ static int chmod_recursive(const char *dir_path, mode_t mode) {
     while ((ep = readdir(dp)) != NULL && !strcmp(ep->d_name, "..")) {
       stpncpy(buf, ep->d_name, strlen(ep->d_name));
       buf[strlen(ep->d_name)] = '\0';
+      fprintf(LOGFILE,
+          "DDEBUG: chmod %s, permissions %o\n", path_tmp, mode);
       ret = chmod(path_tmp, mode);
       if (ret != 0){
         return ret;
