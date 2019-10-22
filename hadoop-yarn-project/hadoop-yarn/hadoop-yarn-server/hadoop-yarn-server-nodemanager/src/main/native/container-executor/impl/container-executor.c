@@ -854,7 +854,10 @@ void chown_dir_contents(const char *dir_path, uid_t uid, gid_t gid) {
 
   dp = opendir(dir_path);
   if (dp != NULL) {
-    while ((ep = readdir(dp)) != NULL && !strcmp(ep->d_name, "..")) {
+    while ((ep = readdir(dp)) != NULL) {
+      if (!strcmp(ep->d_name, "..")) {
+        continue;
+      }
       stpncpy(buf, ep->d_name, strlen(ep->d_name));
       buf[strlen(ep->d_name)] = '\0';
       change_owner(path_tmp, uid, gid);
@@ -889,7 +892,10 @@ static int chmod_recursive(const char *dir_path, mode_t mode) {
 
   dp = opendir(dir_path);
   if (dp != NULL) {
-    while ((ep = readdir(dp)) != NULL && !strcmp(ep->d_name, "..")) {
+    while ((ep = readdir(dp)) != NULL) {
+      if (!strcmp(ep->d_name, "..")) {
+        continue;
+      }
       stpncpy(buf, ep->d_name, strlen(ep->d_name));
       buf[strlen(ep->d_name)] = '\0';
       fprintf(LOGFILE,
