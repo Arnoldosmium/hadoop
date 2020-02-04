@@ -1273,7 +1273,9 @@ int create_script_paths(const char *work_dir,
   if (*container_file_source == -1) {
     exit_code = INVALID_NM_ROOT_DIRS;
     fprintf(ERRORFILE, "Could not open container file");
+    fprintf(LOGFILE, "Could not open container file");
     fflush(ERRORFILE);
+    fflush(LOGFILE);
     return exit_code;
   }
   // open credentials
@@ -1281,7 +1283,9 @@ int create_script_paths(const char *work_dir,
   if (*cred_file_source == -1) {
     exit_code = INVALID_ARGUMENT_NUMBER;
     fprintf(ERRORFILE, "Could not open cred file");
+    fprintf(LOGFILE, "Could not open cred file");
     fflush(ERRORFILE);
+    fflush(LOGFILE);
     return exit_code;
   }
 
@@ -1645,9 +1649,12 @@ int launch_container_as_user(const char *user, const char *app_id,
   exit_code = create_script_paths(
     work_dir, script_name, cred_file, &script_file_dest, &cred_file_dest,
     &container_file_source, &cred_file_source);
+  fprintf(LOGFILE, "alin: Creating script paths returns %d\n", exit_code);
   if (exit_code != 0) {
     fprintf(ERRORFILE, "Could not create local files and directories");
+    fprintf(LOGFILE, "Could not create local files and directories");
     fflush(ERRORFILE);
+    fflush(LOGFILE);
     goto cleanup;
   }
 
@@ -1655,6 +1662,7 @@ int launch_container_as_user(const char *user, const char *app_id,
   if (child_pid != 0) {
     // parent
     exit_code = wait_and_write_exit_code(child_pid, exit_code_file);
+    fprintf(LOGFILE, "alin: wait and write exit code returns %d\n", exit_code);
     goto cleanup;
   }
 
