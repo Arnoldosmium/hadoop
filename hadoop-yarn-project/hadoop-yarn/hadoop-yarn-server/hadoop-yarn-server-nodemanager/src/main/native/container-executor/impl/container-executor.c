@@ -1446,6 +1446,8 @@ int create_script_paths(const char *work_dir,
   if (*container_file_source == -1) {
     exit_code = INVALID_NM_ROOT_DIRS;
     fprintf(ERRORFILE, "Could not open container file");
+    fprintf(LOGFILE, "Could not open container file - %d", exit_code);
+    fflush(LOGFILE);
     fflush(ERRORFILE);
     return exit_code;
   }
@@ -1454,11 +1456,14 @@ int create_script_paths(const char *work_dir,
   if (*cred_file_source == -1) {
     exit_code = INVALID_ARGUMENT_NUMBER;
     fprintf(ERRORFILE, "Could not open cred file");
+    fprintf(LOGFILE, "Could not open cred file - %d", exit_code);
+    fflush(LOGFILE);
     fflush(ERRORFILE);
     return exit_code;
   }
 
   exit_code = 0;
+  fprintf(LOGFILE, "alin: I'm cool here.");
   return exit_code;
 }
 
@@ -1623,7 +1628,7 @@ int launch_docker_container_as_user(const char * user, const char *app_id,
   docker_command = construct_docker_command(command_file);
   docker_binary = get_docker_binary(&CFG);
 
-  fprintf(LOGFILE, "Getting exit code file...\n");
+  fprintf(LOGFILE, "Getting exit code file... launch_docker_container_as_user\n");
   exit_code_file = get_exit_code_file(pid_file);
   if (NULL == exit_code_file) {
     exit_code = OUT_OF_MEMORY;
@@ -1858,7 +1863,7 @@ int launch_container_as_user(const char *user, const char *app_id,
   char *cred_file_dest = NULL;
   char *exit_code_file = NULL;
 
-  fprintf(LOGFILE, "Getting exit code file...\n");
+  fprintf(LOGFILE, "Getting exit code file... launch_container_as_user\n");
   exit_code_file = get_exit_code_file(pid_file);
   if (NULL == exit_code_file) {
     exit_code = OUT_OF_MEMORY;
@@ -1874,7 +1879,9 @@ int launch_container_as_user(const char *user, const char *app_id,
     &container_file_source, &cred_file_source);
   if (exit_code != 0) {
     fprintf(ERRORFILE, "Could not create local files and directories");
+    fprintf(LOGFILE, "Could not create local files and directories - %d", exit_code);
     fflush(ERRORFILE);
+    fflush(LOGFILE);
     goto cleanup;
   }
 
@@ -1882,6 +1889,8 @@ int launch_container_as_user(const char *user, const char *app_id,
   if (child_pid != 0) {
     // parent
     exit_code = wait_and_write_exit_code(child_pid, exit_code_file);
+    fprintf(LOGFILE, "wait_and_write_exit_code - %d", exit_code);
+    fflush(LOGFILE);
     goto cleanup;
   }
 
@@ -1889,6 +1898,8 @@ int launch_container_as_user(const char *user, const char *app_id,
   pid_t pid = setsid();
   if (pid == -1) {
     exit_code = SETSID_OPER_FAILED;
+    fprintf(LOGFILE, "setsid - %d", exit_code);
+    fflush(LOGFILE);
     goto cleanup;
   }
 
