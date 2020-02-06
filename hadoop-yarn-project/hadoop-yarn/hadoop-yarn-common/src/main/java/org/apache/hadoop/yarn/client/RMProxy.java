@@ -129,6 +129,8 @@ public class RMProxy<T> {
           instance.createRMFailoverProxyProvider(conf, protocol);
       return (T) RetryProxy.create(protocol, provider, retryPolicy);
     } else {
+      LOG.debug("Protocol class: " + protocol.toString());
+      LOG.debug("Conf: " + conf);
       InetSocketAddress rmAddress = instance.getRMAddress(conf, protocol);
       LOG.info("Connecting to ResourceManager at " + rmAddress);
       T proxy = instance.getProxy(conf, protocol, rmAddress);
